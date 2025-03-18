@@ -3,8 +3,8 @@
 ## **🔑 Authentication**
 Semua request harus pakai `apikey` di header:  
 ```http
-Authorization: Bearer YOUR_API_KEY
-apikey: YOUR_API_KEY
+Authorization: Bearer YOUR_API_KEY (my supabase at .env or jwt_token login)
+apikey: YOUR_API_KEY (my supabase at .env)
 Content-Type: application/json
 ```
 
