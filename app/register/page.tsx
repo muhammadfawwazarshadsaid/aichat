@@ -51,8 +51,14 @@ export default function Register() {
         setErrors({ apiError: "Registrasi gagal, coba lagi" });
       }
     } catch (error) {
+    console.error("Register error:", error);
+    if (error instanceof Error) {
+      setErrors({ apiError: error.message || "Terjadi kesalahan, coba lagi" });
+    } else {
       setErrors({ apiError: "Terjadi kesalahan, coba lagi" });
     }
+    }
+
   };
 
   return (
