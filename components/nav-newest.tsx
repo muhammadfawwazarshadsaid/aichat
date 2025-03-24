@@ -30,7 +30,7 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar";
-import { togglePin } from "@/lib/supabaseClient";
+import { togglePin, deleteChat } from "@/lib/supabaseClient"; // Import deleteChat
 import React from "react";
 
 export function NavNewest({
@@ -110,7 +110,7 @@ export function NavNewest({
   };
 
   const handlePinToggle = async (url: string, isPinned: boolean) => {
-    const chatId = url.split("/").filter(Boolean).pop() || ""; // Robustly extract chatId
+    const chatId = url.split("/").filter(Boolean).pop() || "";
     const token = Cookies.get("auth_token");
 
     console.log("Toggling pin for chatId:", chatId, "to pinned:", !isPinned);
@@ -123,6 +123,26 @@ export function NavNewest({
     } catch (err) {
       console.error("Failed to toggle pin:", err);
       toast.error(`Gagal mengubah status pin: ${err instanceof Error ? err.message : String(err)}`);
+    }
+  };
+
+  const handleDelete = async (url: string) => {
+    const chatId = url.split("/").filter(Boolean).pop() || "";
+    const token = Cookies.get("auth_token");
+
+    console.log("Deleting chatId:", chatId);
+
+    try {
+      const response = await deleteChat(chatId, token);
+      console.log("deleteChat response:", response);
+      toast.success("Chat berhasil dihapus!", {
+        position: "top-center",
+        icon: <CheckCircle className="text-green-500" />,
+      });
+      if (refetch) refetch();
+    } catch (err) {
+      console.error("Failed to delete chat:", err);
+      toast.error(`Gagal menghapus chat: ${err instanceof Error ? err.message : String(err)}`);
     }
   };
 
@@ -194,7 +214,7 @@ export function NavNewest({
                     )}
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleDelete(item.url)}>
                     <Trash2 className="text-muted-foreground mr-2 h-4 w-4" />
                     <span>Delete</span>
                   </DropdownMenuItem>

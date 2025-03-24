@@ -283,3 +283,34 @@ export const togglePin = async (chatId: string, pinned: boolean, token?: string)
   console.log("Response JSON:", responseData);
   return responseData[0]; // Return the first (and only) updated row
 };
+
+// 1️⃣2️⃣ Delete Chat
+export const deleteChat = async (chatId: string, token?: string) => {
+  console.log("Sending DELETE request for chatId:", chatId);
+
+  const headers = getHeaders(token, true) as HeadersInit & { Prefer?: string };
+  headers["Prefer"] = "return=representation"; // Optional: return deleted row
+
+  const res = await fetch(`${API_URL}/rest/v1/obrolan?id=eq.${chatId}`, {
+    method: "DELETE",
+    headers,
+  });
+
+  console.log("Response status:", res.status, "statusText:", res.statusText);
+
+  if (!res.ok) {
+    const errorData = await res.text();
+    console.error("Raw error response:", errorData);
+    let parsedError;
+    try {
+      parsedError = JSON.parse(errorData);
+    } catch (e) {
+      parsedError = errorData || "No error details returned";
+    }
+    throw new Error(parsedError.message || "Failed to delete chat");
+  }
+
+  const responseData = await res.json();
+  console.log("Response JSON:", responseData);
+  return responseData; // Returns deleted row(s) or empty array
+};

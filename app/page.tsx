@@ -8,19 +8,20 @@ import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/s
 import { Separator } from "@/components/ui/separator";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbPage } from "@/components/ui/breadcrumb";
 import { Button } from "@/components/ui/button";
-import { startNewChatWithMessage } from "@/lib/supabaseClient";
+import { sendContinueMessage, startNewChatWithMessage } from "@/lib/supabaseClient";
 import { ChatContainer, ChatForm } from "@/components/ui/chat";
 import { InterruptPrompt } from "@/components/ui/interrupt-prompt";
 import { MessageInput } from "@/components/ui/message-input";
+import OpenAI from "openai";
 
 export default function HomePage() {
   const router = useRouter();
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
   const [isTransitioning, setIsTransitioning] = React.useState(false);
-  const [input, setInput] = React.useState(""); // State for custom user input
-  const [status, setStatus] = React.useState<"idle" | "submitted" | "streaming">("idle"); // Form status
-  const [isTyping, setIsTyping] = React.useState(false); // Typing indicator
+  const [input, setInput] = React.useState("");
+  const [status, setStatus] = React.useState<"idle" | "submitted" | "streaming">("idle");
+  const [isTyping, setIsTyping] = React.useState(false);
 
   const starterChats = [
     { title: "Ask about the weather", prompt: "What's the weather like today?" },
@@ -41,45 +42,36 @@ export default function HomePage() {
     setTimeout(() => setLoading(false), 500);
   }, []);
 
-  // Handle starter prompt click
-  const handleStarterClick = async (prompt: string) => {
-    const token = Cookies.get("auth_token");
-    const userId = Cookies.get("user_id");
-
-    if (!token || !userId) {
-      setError("User not authenticated");
-      return;
-    }
-
+  // Fetch AI response from server-side API
+  const fetchChatCompletion = async (userMessage: string) => {
     try {
-      setLoading(true);
-      setIsTransitioning(true);
+      const messageHistory: OpenAI.ChatCompletionMessageParam[] = [
+        { role: "user", content: userMessage },
+      ];
 
-      console.log("Starting new chat with userId:", userId, "and prompt:", prompt);
-      const newChat = await startNewChatWithMessage(userId, prompt, "chat baru", token);
-      const chatId = newChat.id;
+      const response = await fetch("/api/chat-completion", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ messages: messageHistory }),
+      });
 
-      console.log("New chat created with chatId:", chatId);
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to fetch chat completion");
+      }
 
-      router.prefetch(`/${chatId}`);
-      setTimeout(() => {
-        router.push(`/${chatId}`);
-        setIsTransitioning(false);
-      }, 300);
+      console.log("API response data:", data);
+      return data.response || "No response received";
     } catch (err) {
-      console.error("Error starting chat:", err);
-      setError(`Failed to start chat: ${err instanceof Error ? err.message : String(err)}`);
-      setIsTransitioning(false);
-    } finally {
-      setLoading(false);
+      console.error("Error fetching chat completion:", err);
+      throw err;
     }
   };
 
-  // Handle custom input submission
-  const handleSubmit = async (event?: { preventDefault?: () => void }) => {
-    if (event?.preventDefault) event.preventDefault();
-    if (!input.trim()) return; // Ignore empty input
-
+  // Handle starting a new chat (starter or custom input)
+  const startNewChat = async (prompt: string) => {
     const token = Cookies.get("auth_token");
     const userId = Cookies.get("user_id");
 
@@ -93,12 +85,24 @@ export default function HomePage() {
       setIsTransitioning(true);
       setStatus("submitted");
 
-      console.log("Starting new chat with userId:", userId, "and custom input:", input);
-      const newChat = await startNewChatWithMessage(userId, input, "chat baru", token);
-      const chatId = newChat.id;
+      console.log("Starting new chat with userId:", userId, "and prompt:", prompt);
 
+      // Create chat with user message
+      const newChat = await startNewChatWithMessage(userId, prompt, "chat baru", token);
+      const chatId = newChat.id;
       console.log("New chat created with chatId:", chatId);
 
+      // Fetch AI response
+      setStatus("streaming");
+      const aiResponse = await fetchChatCompletion(prompt);
+      console.log("Received AI response:", aiResponse);
+      if (!aiResponse) throw new Error("No response from AI");
+
+      // Send AI response to Supabase
+      await sendContinueMessage(chatId, aiResponse, "assistant", token);
+      console.log("AI message sent to Supabase:", { chatId, message: aiResponse, role: "assistant" });
+
+      // Redirect to chat page
       router.prefetch(`/${chatId}`);
       setTimeout(() => {
         router.push(`/${chatId}`);
@@ -116,19 +120,30 @@ export default function HomePage() {
     }
   };
 
+  // Handle starter prompt click
+  const handleStarterClick = (prompt: string) => {
+    startNewChat(prompt);
+  };
+
+  // Handle custom input submission
+  const handleSubmit = async (event?: { preventDefault?: () => void }) => {
+    if (event?.preventDefault) event.preventDefault();
+    if (!input.trim()) return;
+    startNewChat(input);
+  };
+
   // Handle input change
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setInput(e.target.value);
     setIsTyping(true);
-    setTimeout(() => setIsTyping(false), 500); // Reset typing state after delay
+    setTimeout(() => setIsTyping(false), 500);
   };
 
-  // Stop function (for InterruptPrompt compatibility)
+  // Stop function
   const stop = () => {
     setStatus("idle");
   };
 
-  if (loading && !isTransitioning) return <div>Loading...</div>;
   if (error) return <div>{error}</div>;
 
   return (
