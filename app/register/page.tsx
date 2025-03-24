@@ -44,7 +44,7 @@ export default function Register() {
       return;
     }
 
-    const toastId = toast.loading("Memproses pendaftaran...", {
+    const toastId = toast("Memproses pendaftaran...", {
           position: "top-center",
           icon: <Loader2 className="animate-spin" />,
         });
