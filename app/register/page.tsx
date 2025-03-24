@@ -6,13 +6,16 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/com
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Eye, EyeOff } from "lucide-react";
+import { CheckCircle, Eye, EyeOff, Loader2, XCircle } from "lucide-react";
 import { z } from "zod";
 import { registerUser } from "@/lib/supabaseClient";
-
+import { ToastAction } from "@radix-ui/react-toast";
+import { toast } from "sonner";
+import error from "next/error";
 const schema = z.object({
   email: z.string().email("Email tidak valid"),
-  password: z.string().min(6, "Password minimal 6 karakter"),
+  password: z.string().min(6, "Password minimal 8 karakter")
+    .regex(/^(?=.*[A-Z])(?=.*\d).{8,}$/, "Password harus minimal 8 karakter, mengandung 1 huruf kapital, dan 1 angka"),
   username: z.string().min(3, "Username minimal 3 karakter"),
   fullName: z.string().min(3, "Nama lengkap minimal 3 karakter"),
 });
@@ -41,24 +44,55 @@ export default function Register() {
       return;
     }
 
+    const toastId = toast.loading("Memproses pendaftaran...", {
+          position: "top-center",
+          icon: <Loader2 className="animate-spin" />,
+        });
+
     try {
       const data = await registerUser(email, password, username, fullName);
 
       if (data?.authData?.access_token) {
         Cookies.set("auth_token", data.authData.access_token, { expires: 7 });
-        router.push("/"); // Redirect ke home setelah registrasi sukses
+        router.push("/"); // Redirect ke home setelah toast muncul sebentar
+        setTimeout(() => {
+          toast.success("Berhasil daftar!", {
+          description: "Selamat datang 👋",
+          position: "top-center",
+          icon: <CheckCircle className="text-green-500" />,
+          // action: {
+          //   label: "Try again",
+          //   onClick: () => console.log("Trying again..."),
+          // },
+        })
+        }, 2000);
       } else {
+        toast.dismiss(toastId);
+        toast.error("Gagal mendaftar", {
+          description: error instanceof Error ? error.message : "Terjadi kesalahan",
+          position: "top-center",
+          icon: <XCircle className="text-red-500" />,
+        });
         setErrors({ apiError: "Registrasi gagal, coba lagi" });
       }
     } catch (error) {
     console.error("Register error:", error);
-    if (error instanceof Error) {
-      setErrors({ apiError: error.message || "Terjadi kesalahan, coba lagi" });
-    } else {
-      setErrors({ apiError: "Terjadi kesalahan, coba lagi" });
+      if (error instanceof Error) {
+        setErrors({ apiError: error.message || "Terjadi kesalahan, coba lagi" });
+      } else {
+        setErrors({ apiError: "Terjadi kesalahan, coba lagi" });
+      }
+      toast.dismiss(toastId);
+      toast.error("Gagal mendaftar", {
+        description: error instanceof Error ? error.message : "Terjadi kesalahan",
+        position: "top-center",
+        icon: <XCircle className="text-red-500" />,
+      });
     }
-    }
+  };
 
+  const handleNavigate = () => {
+    setTimeout(() => router.push("/login"), 10);
   };
 
   return (
@@ -130,6 +164,7 @@ export default function Register() {
             <Button type="submit" className="w-full">
               Daftar
             </Button>
+            <p className="flex items-center justify-center text-sm">Sudah punya akun? <Button className="font-bold" type="button" variant="link" onClick={handleNavigate}>Masuk</Button></p>
           </form>
         </CardContent>
       </Card>

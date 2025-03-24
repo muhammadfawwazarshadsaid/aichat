@@ -6,9 +6,10 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/com
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Eye, EyeOff } from "lucide-react";
+import { CheckCircle, Eye, EyeOff, Loader2, XCircle } from "lucide-react";
 import { z } from "zod";
 import { loginUser } from "@/lib/supabaseClient";
+import { toast } from "sonner";
 
 const schema = z.object({
   email: z.string().email("Email tidak valid"),
@@ -35,18 +36,50 @@ export default function Login() {
       return;
     }
 
+    const toastId = toast("Memproses masuk...", {
+          position: "top-center",
+          icon: <Loader2 className="animate-spin" />,
+    });
+
     try {
       const data = await loginUser(email, password);
 
       if (data?.access_token) {
         Cookies.set("auth_token", data.access_token, { expires: 7 });
-        router.push("/"); // Redirect ke home setelah login sukses
+        router.push("/"); // Redirect ke home setelah toast muncul sebentar
+        setTimeout(() => {
+          toast.success("Berhasil masuk!", {
+          description: "Selamat datang 👋",
+          position: "top-center",
+          icon: <CheckCircle className="text-green-500" />,
+          // action: {
+          //   label: "Try again",
+          //   onClick: () => console.log("Trying again..."),
+          // },
+        })
+        }, 2000);
       } else {
         setErrors({ apiError: "Email atau password salah" });
+        toast.dismiss(toastId);
+        toast.error("Gagal mendaftar", {
+          description: "Email atau password salah",
+          position: "top-center",
+          icon: <XCircle className="text-red-500" />,
+        });
       }
     } catch (error) {
       setErrors({ apiError: "Terjadi kesalahan, coba lagi" });
+      toast.dismiss(toastId);
+      toast.error("Gagal mendaftar", {
+        description: error instanceof Error ? error.message : "Terjadi kesalahan",
+        position: "top-center",
+        icon: <XCircle className="text-red-500" />,
+      });
     }
+  };
+
+  const handleNavigate = () => {
+    setTimeout(() => router.push("/register"), 10);
   };
 
   return (
@@ -94,6 +127,7 @@ export default function Login() {
             <Button type="submit" className="w-full">
               Masuk
             </Button>
+            <p className="text-sm flex justify-center items-center">Belum punya akun? <Button type="button" variant="link"><span className="font-semibold" onClick={handleNavigate}>Daftar</span></Button></p>
           </form>
         </CardContent>
       </Card>

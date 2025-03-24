@@ -23,29 +23,36 @@ import { TeamSwitcher } from "@/components/team-switcher"
 import {
   Sidebar,
   SidebarContent,
+  SidebarFooter,
   SidebarHeader,
   SidebarRail,
 } from "@/components/ui/sidebar"
+import { NavUser } from "./nav-user"
 
 // This is sample data.
 const data = {
-  teams: [
-    {
-      name: "Acme Inc",
-      logo: Command,
-      plan: "Enterprise",
-    },
-    {
-      name: "Acme Corp.",
-      logo: AudioWaveform,
-      plan: "Startup",
-    },
-    {
-      name: "Evil Corp.",
-      logo: Command,
-      plan: "Free",
-    },
-  ],
+  user: {
+    name: "shadcn",
+    email: "m@example.com",
+    avatar: "/avatars/shadcn.jpg",
+  },
+  // teams: [
+  //   {
+  //     name: "Acme Inc",
+  //     logo: Command,
+  //     plan: "Enterprise",
+  //   },
+  //   {
+  //     name: "Acme Corp.",
+  //     logo: AudioWaveform,
+  //     plan: "Startup",
+  //   },
+  //   {
+  //     name: "Evil Corp.",
+  //     logo: Command,
+  //     plan: "Free",
+  //   },
+  // ],
   navMain: [
     // {
     //   title: "Search",
@@ -264,14 +271,18 @@ export function SidebarLeft({
   return (
     <Sidebar className="border-r-0" {...props}>
       <SidebarHeader>
-        <TeamSwitcher teams={data.teams} />
-        <NavMain items={data.navMain} />
+        <NavUser user={data.user} />
+        {/* <TeamSwitcher teams={data.teams} />
+        <NavMain items={data.navMain} /> */}
       </SidebarHeader>
       <SidebarContent>
         <NavFavorites favorites={data.favorites} />
         {/* <NavWorkspaces workspaces={data.workspaces} /> */}
         {/* <NavSecondary items={data.navSecondary} className="mt-auto" /> */}
       </SidebarContent>
+      {/* <SidebarFooter>
+        <NavUser user={data.user} />
+      </SidebarFooter> */}
       <SidebarRail />
     </Sidebar>
   )
