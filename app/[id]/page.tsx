@@ -3,7 +3,7 @@
 import * as React from "react";
 import { useParams } from "next/navigation";
 import Cookies from "js-cookie";
-import { getMessages, sendContinueMessage } from "@/lib/supabaseClient";
+import { getChatById, getMessages, sendContinueMessage } from "@/lib/supabaseClient";
 
 // UI Components
 import { ChatContainer, ChatForm, ChatMessages } from "@/components/ui/chat";
@@ -22,6 +22,13 @@ interface Message {
   timestamp?: string;
 }
 
+interface Chat {
+  id: string;
+  alias: string;
+  user_id: string;
+  created_at: string;
+}
+
 interface SubmitOptions {
   experimental_attachments?: FileList;
 }
@@ -31,10 +38,11 @@ export default function ChatPage() {
   const [messages, setMessages] = React.useState<
     { id: string; chat_id: string; role: string; message: string; timestamp: string; sequence: number }[]
   >([]);
+  const [chat, setChat] = React.useState<Chat | null>(null);
   const [input, setInput] = React.useState("");
   const [status, setStatus] = React.useState<"idle" | "submitted" | "streaming">("idle");
   const [isTyping, setIsTyping] = React.useState(false);
-  const [loading, setLoading] = React.useState(true);
+  // const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
 
   React.useEffect(() => {
@@ -47,20 +55,27 @@ export default function ChatPage() {
     }
 
     if (id) {
-      const fetchMessages = async () => {
+      const fetchData = async () => {
         try {
-          const data = await getMessages(id as string, token);
-          console.log("Fetched messages:", data);
-          setMessages(Array.isArray(data) ? data : []);
-          setLoading(false);
+          // Fetch chat details
+          const chatData = await getChatById(id as string, token);
+          console.log("Fetched chat:", chatData);
+          setChat(chatData);
+
+          // Fetch messages
+          const messagesData = await getMessages(id as string, token);
+          console.log("Fetched messages:", messagesData);
+          setMessages(Array.isArray(messagesData) ? messagesData : []);
+
+          // setLoading(false);
         } catch (err) {
-          console.error("Fetch messages error:", err);
-          setError(`Failed to load messages: ${err instanceof Error ? err.message : String(err)}`);
-          setLoading(false);
+          console.error("Fetch data error:", err);
+          setError(`Failed to load data: ${err instanceof Error ? err.message : String(err)}`);
+          // setLoading(false);
         }
       };
 
-      fetchMessages();
+      fetchData();
     }
   }, [id]);
 
@@ -125,7 +140,7 @@ export default function ChatPage() {
     setStatus("idle");
   };
 
-  if (loading) return <div>Loading...</div>;
+  // if (loading) return <div>Loading...</div>;
   if (error) return <div>{error}</div>;
 
   return (
@@ -139,7 +154,9 @@ export default function ChatPage() {
             <Breadcrumb>
               <BreadcrumbList>
                 <BreadcrumbItem>
-                  <BreadcrumbPage className="line-clamp-1">Chat Name</BreadcrumbPage>
+                  <BreadcrumbPage className="line-clamp-1">
+                    {chat?.alias || "Chat Name"}
+                  </BreadcrumbPage>
                 </BreadcrumbItem>
               </BreadcrumbList>
             </Breadcrumb>

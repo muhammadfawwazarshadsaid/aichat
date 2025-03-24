@@ -44,29 +44,19 @@ export default function Login() {
     try {
       const data = await loginUser(email, password);
 
-      if (data?.access_token) {
-        Cookies.set("auth_token", data.access_token, { expires: 7 });
-        router.push("/"); // Redirect ke home setelah toast muncul sebentar
-        setTimeout(() => {
-          toast.success("Berhasil masuk!", {
-          description: "Selamat datang 👋",
-          position: "top-center",
-          icon: <CheckCircle className="text-green-500" />,
-          // action: {
-          //   label: "Try again",
-          //   onClick: () => console.log("Trying again..."),
-          // },
-        })
-        }, 2000);
-      } else {
-        setErrors({ apiError: "Email atau password salah" });
-        toast.dismiss(toastId);
-        toast.error("Gagal mendaftar", {
-          description: "Email atau password salah",
-          position: "top-center",
-          icon: <XCircle className="text-red-500" />,
-        });
-      }
+      Cookies.set("auth_token", data.authData.access_token, { expires: 7 });
+      router.push("/"); // Redirect ke home setelah toast muncul sebentar
+      setTimeout(() => {
+        toast.success("Berhasil masuk!", {
+        description: "Selamat datang 👋",
+        position: "top-center",
+        icon: <CheckCircle className="text-green-500" />,
+        // action: {
+        //   label: "Try again",
+        //   onClick: () => console.log("Trying again..."),
+        // },
+      })
+      }, 2000);
     } catch (error) {
       setErrors({ apiError: "Terjadi kesalahan, coba lagi" });
       toast.dismiss(toastId);

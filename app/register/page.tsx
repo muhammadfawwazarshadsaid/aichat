@@ -52,7 +52,6 @@ export default function Register() {
     try {
       const data = await registerUser(email, password, username, fullName);
 
-      if (data?.authData?.access_token) {
         Cookies.set("auth_token", data.authData.access_token, { expires: 7 });
         router.push("/"); // Redirect ke home setelah toast muncul sebentar
         setTimeout(() => {
@@ -66,15 +65,6 @@ export default function Register() {
           // },
         })
         }, 2000);
-      } else {
-        toast.dismiss(toastId);
-        toast.error("Gagal mendaftar", {
-          description: error instanceof Error ? error.message : "Terjadi kesalahan",
-          position: "top-center",
-          icon: <XCircle className="text-red-500" />,
-        });
-        setErrors({ apiError: "Registrasi gagal, coba lagi" });
-      }
     } catch (error) {
     console.error("Register error:", error);
       if (error instanceof Error) {
