@@ -1,4 +1,5 @@
 import Cookies from "js-cookie";
+import { v4 as uuidv4 } from "uuid";
 
 const API_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const API_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -106,13 +107,54 @@ export const loginUser = async (email: string, password: string) => {
 };
 
 // 3️⃣ Start New Chat
-export const startNewChat = async (userId: string, token?: string) => {
-    const res = await fetch(`${API_URL}/rest/v1/obrolan`, {
-        method: "POST",
-        headers: getHeaders(token, true), // Butuh token user
-        body: JSON.stringify({ user_id: userId })
+export const startNewChatWithMessage = async (
+  userId: string,
+  message: string,
+  alias: string = "chat baru",
+  token?: string
+) => {
+  try {
+    const chatId = uuidv4(); // Generate chat_id client-side since no return
+
+    // Step 1: Create new chat
+    const chatRes = await fetch(`${API_URL}/rest/v1/obrolan`, {
+      method: "POST",
+      headers: getHeaders(token, true),
+      body: JSON.stringify({
+        id: chatId, // Explicitly set ID
+        user_id: userId,
+        alias,
+      }),
     });
-    return res.json();
+
+    if (!chatRes.ok) {
+      const errorData = await chatRes.json();
+      throw new Error(errorData.message || "Failed to create chat");
+    }
+
+    // Step 2: Send initial message
+    const messageRes = await fetch(`${API_URL}/rest/v1/pesan`, {
+      method: "POST",
+      headers: getHeaders(token, true),
+      body: JSON.stringify({
+        chat_id: chatId,
+        role: "user",
+        message,
+        timestamp: new Date().toISOString(),
+      }),
+    });
+
+    if (!messageRes.ok) {
+      const errorData = await messageRes.json();
+      throw new Error(errorData.message || "Failed to send initial message");
+    }
+
+    // Return chatId for redirection
+    return { id: chatId };
+  } catch (error) {
+    console.error("Start new chat with message error:", error);
+    throw error;
+  }
 };
 
 // 4️⃣ Get Chats by User
@@ -124,13 +166,35 @@ export const getChatsByUser = async (userId: string, token?: string) => {
 };
 
 // 5️⃣ Send Message
-export const sendMessage = async (userId: string, message: string, role: string = "user", token?: string) => {
-    const res = await fetch(`${API_URL}/rpc/send_message`, {
-        method: "POST",
-        headers: getHeaders(token, true), // Butuh token user
-        body: JSON.stringify({ user_id: userId, message, role })
+export const sendContinueMessage = async (
+  chatId: string,
+  message: string,
+  role: string = "user",
+  token?: string
+) => {
+  try {
+    const res = await fetch(`${API_URL}/rest/v1/pesan`, {
+      method: "POST",
+      headers: getHeaders(token, true),
+      body: JSON.stringify({
+        chat_id: chatId,
+        role,
+        message,
+        timestamp: new Date().toISOString(),
+      }),
     });
-    return res.json();
+
+    if (!res.ok) {
+      const errorData = await res.json();
+      throw new Error(errorData.message || "Failed to send message");
+    }
+
+    // Since there's "no return", we return the input data for optimism
+    return { chat_id: chatId, role, message, timestamp: new Date().toISOString() };
+  } catch (error) {
+    console.error("Send continue message error:", error);
+    throw error;
+  }
 };
 
 // 6️⃣ Get Messages in a Chat
@@ -176,3 +240,15 @@ export const updateProfile = async (userId: string, token: string, username?: st
 
     return res.json();
 };
+
+// 1️⃣0️⃣ Get Chat by ID
+export const getChatById = async (chatId: string, token: string) => {
+    const res = await fetch(`${API_URL}/rest/v1/obrolan?id=eq.${chatId}`, {
+        headers: getHeaders(token, true)
+    });
+
+    if (!res.ok) throw new Error("Gagal mengambil detail obrolan");
+
+    const data = await res.json();
+    return data[0]; // Ambil data obrolan pertama (karena ID unik)
+}

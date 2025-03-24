@@ -62,7 +62,7 @@ const data = {
     // },
     {
       title: "Ask AI",
-      url: "#",
+      url: "/",
       icon: Sparkles,
     },
     // {
@@ -287,21 +287,22 @@ export function SidebarLeft({ ...props }: React.ComponentProps<typeof Sidebar>) 
   }
 }, [router]); // Tambahin `router` biar dependensinya jelas
 
-
+  const newestChats = chats.map((chat) => ({
+      name: chat.alias,
+      url: `/${chat.id}`,
+      created_at: chat.created_at, // Pass created_at
+    }));
 
   return (
     <Sidebar className="border-r-0" {...props}>
       <SidebarHeader>
         <NavUser user={{ name: user?.name || "", email: user?.email || "", avatar: "" }}/>
-        {/* <TeamSwitcher teams={data.teams} />
-        <NavMain items={data.navMain} /> */}
+        {/* <TeamSwitcher teams={data.teams} /> */}
+        <NavMain items={data.navMain} />
       </SidebarHeader>
       <SidebarContent>
         {/* <NavNewest newest={chats} /> */}
-        <NavNewest newest={chats.map(chat => ({
-          name: chat.alias,
-          url: chat.id,
-        }))} />
+        <NavNewest newest={newestChats} />
         {/* <NavWorkspaces workspaces={data.workspaces} /> */}
         {/* <NavSecondary items={data.navSecondary} className="mt-auto" /> */}
       </SidebarContent>
