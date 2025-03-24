@@ -28,7 +28,7 @@ import {
   SidebarRail,
 } from "@/components/ui/sidebar"
 import { NavUser } from "./nav-user"
-import { getUserProfile } from "@/lib/supabaseClient"
+import { getChatsByUser, getUserProfile } from "@/lib/supabaseClient"
 import { useRouter } from "next/navigation";
 // This is sample data.
 const data = {
@@ -268,6 +268,7 @@ const data = {
 
 export function SidebarLeft({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const [user, setUser] = React.useState<{ name: string; email: string; avatar: string } | null>(null)
+  const [chats, setChats] = React.useState<{ id: string; alias: string; user_id: string; created_at: string }[]>([]);
   const router = useRouter();
 
   React.useEffect(() => {
@@ -280,6 +281,9 @@ export function SidebarLeft({ ...props }: React.ComponentProps<typeof Sidebar>) 
     getUserProfile(userId, token)
       .then(profile => setUser({ name: profile.username, email: profile.email, avatar: "" }))
       .catch(err => console.error("Gagal mengambil profil:", err));
+    getChatsByUser(userId, token)
+      .then(chats => setChats(chats))
+      .catch(err => console.error("Gagal mengambil obrolan:", err));
   }
 }, [router]); // Tambahin `router` biar dependensinya jelas
 
@@ -293,7 +297,11 @@ export function SidebarLeft({ ...props }: React.ComponentProps<typeof Sidebar>) 
         <NavMain items={data.navMain} /> */}
       </SidebarHeader>
       <SidebarContent>
-        <NavNewest newest={data.newest} />
+        {/* <NavNewest newest={chats} /> */}
+        <NavNewest newest={chats.map(chat => ({
+          name: chat.alias,
+          url: chat.id,
+        }))} />
         {/* <NavWorkspaces workspaces={data.workspaces} /> */}
         {/* <NavSecondary items={data.navSecondary} className="mt-auto" /> */}
       </SidebarContent>
