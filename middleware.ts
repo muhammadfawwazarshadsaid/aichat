@@ -11,10 +11,10 @@ export function middleware(req: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  // if (url.pathname === "/login" && token) {
-  //   url.pathname = "/"; // Redirect ke / kalau sudah login
-  //   return NextResponse.redirect(url);
-  // }
+  if ((url.pathname === "/login" || url.pathname === "/register") && token) {
+    url.pathname = "/"; // Redirect ke / kalau sudah login
+    return NextResponse.redirect(url);
+  }
 
   return NextResponse.next();
 }

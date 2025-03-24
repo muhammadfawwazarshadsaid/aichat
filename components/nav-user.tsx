@@ -42,6 +42,22 @@ export function NavUser({
 }) {
   const { isMobile } = useSidebar()
 
+  const getAvatarInitials = (name: string | undefined) => {
+  if (!name) return user.name; // Pastikan nama tidak undefined atau null
+
+  const words = name.trim().split(" ").filter(w => w.length > 0); // Hindari spasi kosong
+
+  if (words.length >= 2) {
+    return (words[0][0] + words[1][0]).toUpperCase(); // Ambil huruf pertama dari 2 kata pertama
+  } else if (words.length === 1) {
+    return words[0][0]?.toUpperCase() || ""; // Jika hanya ada satu kata, ambil satu huruf saja
+  }
+  return "Guest"; // Jika kosong, kembalikan Guest
+};
+
+
+  const initials = getAvatarInitials(user.name);
+
   return (
     <SidebarMenu>
       <SidebarMenuItem>
@@ -53,7 +69,7 @@ export function NavUser({
             >
               <Avatar className="h-8 w-8 rounded-lg">
                 <AvatarImage src={user.avatar} alt={user.name} />
-                <AvatarFallback className="rounded-lg">CN</AvatarFallback>
+                <AvatarFallback className="rounded-lg">{initials}</AvatarFallback>
               </Avatar>
               <div className="grid flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-medium">{user.name}</span>
@@ -72,7 +88,7 @@ export function NavUser({
               <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
                 <Avatar className="h-8 w-8 rounded-lg">
                   <AvatarImage src={user.avatar} alt={user.name} />
-                  <AvatarFallback className="rounded-lg">CN</AvatarFallback>
+                  <AvatarFallback className="rounded-lg">{initials}</AvatarFallback>
                 </Avatar>
                 <div className="grid flex-1 text-left text-sm leading-tight">
                   <span className="truncate font-medium">{user.name}</span>

@@ -1,5 +1,5 @@
 "use client"
-
+import Cookies from "js-cookie";
 import * as React from "react"
 import {
   AudioWaveform,
@@ -15,7 +15,7 @@ import {
   Trash2,
 } from "lucide-react"
 
-import { NavFavorites } from "@/components/nav-favorites"
+import { NavNewest } from "@/components/nav-newest"
 import { NavMain } from "@/components/nav-main"
 // import { NavSecondary } from "@/components/nav-secondary"
 // import { NavWorkspaces } from "@/components/nav-workspaces"
@@ -28,7 +28,8 @@ import {
   SidebarRail,
 } from "@/components/ui/sidebar"
 import { NavUser } from "./nav-user"
-
+import { getUserProfile } from "@/lib/supabaseClient"
+import { useRouter } from "next/navigation";
 // This is sample data.
 const data = {
   user: {
@@ -104,7 +105,7 @@ const data = {
   //     icon: MessageCircleQuestion,
   //   },
   // ],
-  favorites: [
+  newest: [
     {
       name: "Project Management & Task Tracking",
       url: "#",
@@ -265,18 +266,34 @@ const data = {
   // ],
 }
 
-export function SidebarLeft({
-  ...props
-}: React.ComponentProps<typeof Sidebar>) {
+export function SidebarLeft({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const [user, setUser] = React.useState<{ name: string; email: string; avatar: string } | null>(null)
+  const router = useRouter();
+
+  React.useEffect(() => {
+  const token = Cookies.get("auth_token");
+  const userId = Cookies.get("user_id");
+
+  if (!token || !userId) {
+    router.push("/login");
+  } else {
+    getUserProfile(userId, token)
+      .then(profile => setUser({ name: profile.username, email: profile.email, avatar: "" }))
+      .catch(err => console.error("Gagal mengambil profil:", err));
+  }
+}, [router]); // Tambahin `router` biar dependensinya jelas
+
+
+
   return (
     <Sidebar className="border-r-0" {...props}>
       <SidebarHeader>
-        <NavUser user={data.user} />
+        <NavUser user={{ name: user?.name || "", email: user?.email || "", avatar: "" }}/>
         {/* <TeamSwitcher teams={data.teams} />
         <NavMain items={data.navMain} /> */}
       </SidebarHeader>
       <SidebarContent>
-        <NavFavorites favorites={data.favorites} />
+        <NavNewest newest={data.newest} />
         {/* <NavWorkspaces workspaces={data.workspaces} /> */}
         {/* <NavSecondary items={data.navSecondary} className="mt-auto" /> */}
       </SidebarContent>

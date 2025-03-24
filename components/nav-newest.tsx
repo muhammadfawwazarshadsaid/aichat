@@ -25,10 +25,10 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar"
 
-export function NavFavorites({
-  favorites,
+export function NavNewest({
+  newest,
 }: {
-  favorites: {
+  newest: {
     name: string
     url: string
     // emoji: string
@@ -38,9 +38,9 @@ export function NavFavorites({
 
   return (
     <SidebarGroup className="group-data-[collapsible=icon]:hidden">
-      <SidebarGroupLabel>Favorites</SidebarGroupLabel>
+      <SidebarGroupLabel>Newest</SidebarGroupLabel>
       <SidebarMenu>
-        {favorites.map((item) => (
+        {newest.map((item) => (
           <SidebarMenuItem key={item.name}>
             <SidebarMenuButton asChild>
               <a href={item.url} title={item.name}>
@@ -62,7 +62,7 @@ export function NavFavorites({
               >
                 {/* <DropdownMenuItem>
                   <StarOff className="text-muted-foreground" />
-                  <span>Remove from Favorites</span>
+                  <span>Remove from Newest</span>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator /> */}
                 <DropdownMenuItem>

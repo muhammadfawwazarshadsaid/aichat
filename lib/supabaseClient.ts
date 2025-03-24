@@ -57,17 +57,14 @@ export const registerUser = async (email: string, password: string, username: st
       if (!loginRes.ok || !loginData.access_token) {
         throw new Error("Gagal login setelah register");
       }
-
-      token = loginData.access_token;
+      // 3️⃣ Simpan token ke cookies
+      Cookies.set("auth_token", loginData.access_token, { expires: 7 });
+      Cookies.set("user_id", loginData.user.id, { expires: 7 });
     }
-
-    // 3️⃣ Simpan token ke cookies
-    Cookies.set("auth_token", token, { expires: 7 });
-
     // 4️⃣ Simpan username & full_name ke tabel `profiles`
     const profileRes = await fetch(`${API_URL}/rest/v1/profiles`, {
       method: "POST",
-      headers: getHeaders(token, true),
+      headers: getHeaders(token, false),
       body: JSON.stringify({ id: userId, email, username, full_name: fullName })
     });
 
@@ -86,19 +83,26 @@ export const registerUser = async (email: string, password: string, username: st
 
 // 2️⃣ Login User (Dapatkan token JWT)
 export const loginUser = async (email: string, password: string) => {
+    // 1️⃣ Request login untuk mendapatkan token
     const res = await fetch(`${API_URL}/auth/v1/token?grant_type=password`, {
         method: "POST",
         headers: getHeaders(undefined, false),
         body: JSON.stringify({ email, password })
     });
-
     const data = await res.json();
 
-    if (res.ok && data.access_token) {
-        Cookies.set("auth_token", data.access_token, { expires: 7 }); // Simpan token di cookies selama 7 hari
+    if (!res.ok || !data.access_token) {
+      throw new Error(data.error?.message || "Gagal login");
     }
+    // 2️⃣ Simpan token di cookies
+    Cookies.set("auth_token", data.access_token, { expires: 7 });
+    Cookies.set("user_id", data.user.id, { expires: 7 });
 
-    return data;
+    // 3️⃣ Ambil profil user setelah login sukses
+    const userProfile = await getUserProfile(data.user?.id, data.access_token);
+
+    // 4️⃣ Return data lengkap (auth data + profil)
+    return { authData: data, userProfile };
 };
 
 // 3️⃣ Start New Chat
@@ -140,13 +144,14 @@ export const getMessages = async (chatId: string, token?: string) => {
 // 7️⃣ Logout User
 export const logoutUser = () => {
   Cookies.remove("auth_token"); // Hapus token dari cookies
+  Cookies.remove("user_id"); // Hapus user_id dari cookies
   window.location.href = "/login"; // Redirect ke login
 }
 
 // 8️⃣ Get User Profile
 export const getUserProfile = async (userId: string, token: string) => {
     const res = await fetch(`${API_URL}/rest/v1/profiles?id=eq.${userId}`, {
-        headers: getHeaders(token, true),
+        headers: getHeaders(token, false),
     });
 
     if (!res.ok) throw new Error("Gagal mengambil profil user");
