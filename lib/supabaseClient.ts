@@ -252,3 +252,34 @@ export const getChatById = async (chatId: string, token: string) => {
     const data = await res.json();
     return data[0]; // Ambil data obrolan pertama (karena ID unik)
 }
+// 1️⃣1️⃣ Toggle Chat Pin
+export const togglePin = async (chatId: string, pinned: boolean, token?: string) => {
+  console.log("Sending PATCH request for chatId:", chatId, "with pinned:", pinned);
+
+  const headers = getHeaders(token, true) as HeadersInit & { Prefer?: string };
+  headers["Prefer"] = "return=representation"; // Ensure updated row is returned
+
+  const res = await fetch(`${API_URL}/rest/v1/obrolan?id=eq.${chatId}`, {
+    method: "PATCH",
+    headers,
+    body: JSON.stringify({ pinned }),
+  });
+
+  console.log("Response status:", res.status, "statusText:", res.statusText);
+
+  if (!res.ok) {
+    const errorData = await res.text();
+    console.error("Raw error response:", errorData);
+    let parsedError;
+    try {
+      parsedError = JSON.parse(errorData);
+    } catch (e) {
+      parsedError = errorData || "No error details returned";
+    }
+    throw new Error(parsedError.message || "Failed to toggle pin");
+  }
+
+  const responseData = await res.json();
+  console.log("Response JSON:", responseData);
+  return responseData[0]; // Return the first (and only) updated row
+};

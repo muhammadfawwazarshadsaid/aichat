@@ -268,7 +268,7 @@ const data = {
 
 export function SidebarLeft({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const [user, setUser] = React.useState<{ name: string; email: string; avatar: string } | null>(null)
-  const [chats, setChats] = React.useState<{ id: string; alias: string; user_id: string; created_at: string }[]>([]);
+  const [chats, setChats] = React.useState<{ id: string; alias: string; user_id: string; created_at: string; pinned: boolean }[]>([]);
   const router = useRouter();
 
   React.useEffect(() => {
@@ -287,11 +287,30 @@ export function SidebarLeft({ ...props }: React.ComponentProps<typeof Sidebar>) 
   }
 }, [router]); // Tambahin `router` biar dependensinya jelas
 
+  const token = Cookies.get("auth_token");
+  const userId = Cookies.get("user_id");
+  // Function to fetch chats
+  const fetchChats = async () => {
+    if (token && userId) {
+      try {
+        const data = await getChatsByUser(userId, token);
+        setChats(Array.isArray(data) ? data : []);
+      } catch (err) {
+        console.error("Failed to fetch chats:", err);
+      }
+    }
+  };
+
+  React.useEffect(() => {
+    fetchChats();
+  }, [token, userId]);
+
   const newestChats = chats.map((chat) => ({
-      name: chat.alias,
-      url: `/${chat.id}`,
-      created_at: chat.created_at, // Pass created_at
-    }));
+    name: chat.alias,
+    url: `/${chat.id}`,
+    created_at: chat.created_at,
+    pinned: chat.pinned || false, // Default to false if null
+  }));
 
   return (
     <Sidebar className="border-r-0" {...props}>
@@ -302,7 +321,7 @@ export function SidebarLeft({ ...props }: React.ComponentProps<typeof Sidebar>) 
       </SidebarHeader>
       <SidebarContent>
         {/* <NavNewest newest={chats} /> */}
-        <NavNewest newest={newestChats} />
+        <NavNewest newest={newestChats} refetch={fetchChats} />
         {/* <NavWorkspaces workspaces={data.workspaces} /> */}
         {/* <NavSecondary items={data.navSecondary} className="mt-auto" /> */}
       </SidebarContent>
