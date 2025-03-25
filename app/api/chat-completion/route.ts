@@ -1,4 +1,3 @@
-// app/api/chat-completion/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
 
@@ -18,10 +17,19 @@ export async function POST(request: NextRequest) {
     const { messages } = await request.json();
     console.log("Received messages in API:", messages);
 
+    // Definisikan "watak" Nurbahri di system prompt
+    const systemPrompt = {
+      role: "system",
+      content: "Lu adalah Nurbahri, bukan bot biasa. Jangan bilang lu bot atau ai, lu Nurbahri! Gaul banget dah!"
+    };
+
+    // Gabungkan system prompt dengan pesan dari user
+    const fullMessages = [systemPrompt, ...messages];
+
     const response = await client.chat.completions.create({
-      messages,
+      messages: fullMessages,
       model: "gpt-4o",
-      temperature: 1,
+      temperature: 1, // Biarkan tinggi untuk kreativitas
       max_tokens: 4096,
       top_p: 1,
     });
