@@ -22,12 +22,13 @@ export default function HomePage() {
   const [input, setInput] = React.useState("");
   const [status, setStatus] = React.useState<"idle" | "submitted" | "streaming">("idle");
   const [isTyping, setIsTyping] = React.useState(false);
+  const [isWaitingForResponse, setIsWaitingForResponse] = React.useState(false);
 
   const starterChats = [
-    { title: "Ask about the weather", prompt: "What's the weather like today?" },
-    { title: "Get coding help", prompt: "Can you help me debug my React code?" },
-    { title: "Explore AI topics", prompt: "What are the latest advancements in AI?" },
-    { title: "Plan a trip", prompt: "Help me plan a weekend getaway." },
+    { title: "Tanya menu buka yang enak", prompt: "Bang kasih gw rekomendasi menu bukber dong." },
+    { title: "Curhat dong", prompt: "Gw lagi sedih nih bang" },
+    { title: "Cara jadi kaya", prompt: "Tips kaya tanpa ngepet" },
+    { title: "Ide jalan-jalan", prompt: "Enaknya jalan-jalan ke mana yak" },
   ];
 
   React.useEffect(() => {
@@ -42,7 +43,6 @@ export default function HomePage() {
     setTimeout(() => setLoading(false), 500);
   }, []);
 
-  // Fetch AI response from server-side API
   const fetchChatCompletion = async (userMessage: string) => {
     try {
       const messageHistory: OpenAI.ChatCompletionMessageParam[] = [
@@ -70,7 +70,6 @@ export default function HomePage() {
     }
   };
 
-  // Handle starting a new chat (starter or custom input)
   const startNewChat = async (prompt: string) => {
     const token = Cookies.get("auth_token");
     const userId = Cookies.get("user_id");
@@ -84,64 +83,60 @@ export default function HomePage() {
       setLoading(true);
       setIsTransitioning(true);
       setStatus("submitted");
+      setIsWaitingForResponse(true);
 
       console.log("Starting new chat with userId:", userId, "and prompt:", prompt);
 
-      // Create chat with user message
       const newChat = await startNewChatWithMessage(userId, prompt, "chat baru", token);
       const chatId = newChat.id;
       console.log("New chat created with chatId:", chatId);
 
-      // Fetch AI response
       setStatus("streaming");
       const aiResponse = await fetchChatCompletion(prompt);
       console.log("Received AI response:", aiResponse);
       if (!aiResponse) throw new Error("No response from AI");
 
-      // Send AI response to Supabase
       await sendContinueMessage(chatId, aiResponse, "assistant", token);
       console.log("AI message sent to Supabase:", { chatId, message: aiResponse, role: "assistant" });
 
-      // Redirect to chat page
       router.prefetch(`/${chatId}`);
       setTimeout(() => {
         router.push(`/${chatId}`);
         setIsTransitioning(false);
-        setInput(""); // Clear input after submission
+        setInput("");
         setStatus("idle");
+        setIsWaitingForResponse(false);
       }, 300);
     } catch (err) {
       console.error("Error starting chat:", err);
       setError(`Failed to start chat: ${err instanceof Error ? err.message : String(err)}`);
       setIsTransitioning(false);
       setStatus("idle");
+      setIsWaitingForResponse(false);
     } finally {
       setLoading(false);
     }
   };
 
-  // Handle starter prompt click
   const handleStarterClick = (prompt: string) => {
     startNewChat(prompt);
   };
 
-  // Handle custom input submission
   const handleSubmit = async (event?: { preventDefault?: () => void }) => {
     if (event?.preventDefault) event.preventDefault();
     if (!input.trim()) return;
     startNewChat(input);
   };
 
-  // Handle input change
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setInput(e.target.value);
     setIsTyping(true);
     setTimeout(() => setIsTyping(false), 500);
   };
 
-  // Stop function
   const stop = () => {
     setStatus("idle");
+    setIsWaitingForResponse(false);
   };
 
   if (error) return <div>{error}</div>;
@@ -167,10 +162,11 @@ export default function HomePage() {
         <div className="flex flex-1 flex-col gap-4 p-4">
           <ChatContainer className="h-full flex flex-col justify-between mx-auto w-full max-w-3xl rounded-xl transition-opacity duration-300 ease-in-out">
             <div>
-              <h1 className="text-2xl font-bold mb-4">Start a New Chat</h1>
+              <h1 className="text-2xl font-bold mb-4">Mulai Chat Baru</h1>
               <p className="text-muted-foreground mb-6">
-                Not sure where to begin? Try one of these starter prompts or type your own below!
+                Kagak tau mau ngechat apa? Coba ini dah!
               </p>
+
               <div className="grid gap-4 md:grid-cols-2">
                 {starterChats.map((chat, index) => (
                   <Button
@@ -187,6 +183,21 @@ export default function HomePage() {
                   </Button>
                 ))}
               </div>
+
+              {/* Indikator Loading dengan gaya bubble chat assistant */}
+              {isWaitingForResponse && status === "streaming" && (
+                <div className="mt-4 flex justify-start">
+                  <div className="rounded-lg p-3 max-w-md flex items-center gap-2 text-muted-foreground">
+                    <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                    </svg>
+                    <span className="inline-block animate-bounce">.</span>
+                    <span className="inline-block animate-bounce delay-100">.</span>
+                    <span className="inline-block animate-bounce delay-200">.</span>
+                  </div>
+                </div>
+              )}
             </div>
 
             <ChatForm

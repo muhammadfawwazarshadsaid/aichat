@@ -61,7 +61,7 @@ const data = {
     //   icon: Search,
     // },
     {
-      title: "Ask AI",
+      title: "Tanya Nurbahri AI",
       url: "/",
       icon: Sparkles,
     },

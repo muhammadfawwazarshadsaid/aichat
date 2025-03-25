@@ -45,6 +45,7 @@ export default function ChatPage() {
   const [displayedResponse, setDisplayedResponse] = React.useState("");
   const [fullResponse, setFullResponse] = React.useState("");
   const [error, setError] = React.useState<string | null>(null);
+  const [isWaitingForResponse, setIsWaitingForResponse] = React.useState(false);
 
   React.useEffect(() => {
     const token = Cookies.get("auth_token");
@@ -113,6 +114,7 @@ export default function ChatPage() {
     }
 
     setStatus("submitted");
+    setIsWaitingForResponse(true);
 
     const optimisticUserMessage = {
       id: Date.now().toString(),
@@ -141,7 +143,7 @@ export default function ChatPage() {
       const aiMessage = {
         id: (Date.now() + 1).toString(),
         chat_id: id as string,
-        role: "assistant", // Adjust to "ai" if Supabase expects it
+        role: "assistant",
         message: aiResponse,
         timestamp: new Date().toISOString(),
         sequence: messages.length + 2,
@@ -152,9 +154,11 @@ export default function ChatPage() {
       const updatedMessages = await getMessages(id as string, token);
       console.log("Updated messages from Supabase:", updatedMessages);
       setMessages(Array.isArray(updatedMessages) ? updatedMessages : [optimisticUserMessage, aiMessage]);
+      setIsWaitingForResponse(false);
     } catch (err) {
       console.error("Submit error:", err);
       setError(`Failed to process message: ${err instanceof Error ? err.message : String(err)}`);
+      setIsWaitingForResponse(false);
     } finally {
       setStatus("idle");
     }
@@ -162,6 +166,7 @@ export default function ChatPage() {
 
   const stop = () => {
     setStatus("idle");
+    setIsWaitingForResponse(false);
   };
 
   const fetchChatCompletion = async (userMessage: string) => {
@@ -228,6 +233,18 @@ export default function ChatPage() {
                       : []),
                   ]}
                 />
+                {/* Indikator Loading di luar MessageList */}
+                {isWaitingForResponse && status === "streaming" && (
+                  <div className="text-muted-foreground flex items-center justify-start gap-2 mt-2">
+                    <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                    </svg>
+                    <span className="inline-block animate-bounce">.</span>
+                    <span className="inline-block animate-bounce delay-100">.</span>
+                    <span className="inline-block animate-bounce delay-200">.</span>
+                  </div>
+                )}
               </ChatMessages>
             </div>
 
