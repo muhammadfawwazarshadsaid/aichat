@@ -93,7 +93,7 @@ export default function CustomChat() {
             const fetchMessages = async () => {
                 try {
                     const data = await getMessages(id as string, token);
-                    setChatMessages(data.map((msg) => ({
+                    setChatMessages(data.map((msg: any) => ({
                         id: msg.id,
                         role: msg.role,
                         content: msg.message,
