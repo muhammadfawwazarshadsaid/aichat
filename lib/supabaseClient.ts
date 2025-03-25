@@ -111,20 +111,24 @@ export const loginUser = async (email: string, password: string) => {
 export const startNewChatWithMessage = async (
   userId: string,
   message: string,
-  alias: string = "chat baru",
+  alias: string = "chat baru", // Default sebagai fallback
   token?: string
 ) => {
   try {
+    const API_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const chatId = uuidv4(); // Generate chat_id client-side since no return
 
-    // Step 1: Create new chat
+    // Generate alias dari AI berdasarkan pesan pertama
+    const recommendedAlias = await generateChatTitle(message, token);
+
+    // Step 1: Create new chat dengan alias dari AI
     const chatRes = await fetch(`${API_URL}/rest/v1/obrolan`, {
       method: "POST",
       headers: getHeaders(token, true),
       body: JSON.stringify({
         id: chatId, // Explicitly set ID
         user_id: userId,
-        alias,
+        alias: recommendedAlias, // Gunakan alias dari AI
       }),
     });
 
@@ -150,11 +154,42 @@ export const startNewChatWithMessage = async (
       throw new Error(errorData.message || "Failed to send initial message");
     }
 
-    // Return chatId for redirection
+    // Return chatId untuk redirection
     return { id: chatId };
   } catch (error) {
     console.error("Start new chat with message error:", error);
     throw error;
+  }
+};
+
+// Fungsi untuk menghasilkan judul dari AI
+const generateChatTitle = async (message: string, token?: string) => {
+  try {
+    const response = await fetch("/api/chat-completion", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        messages: [
+          { role: "system", content: "Buat judul obrolan maksimal 30 karakter dalam bahasa Indonesia berdasarkan pesan ini." },
+          { role: "user", content: message },
+        ],
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || "Failed to generate title");
+    }
+
+    const data = await response.json();
+    let title = data.response || "Obrolan Baru";
+    // Pastikan judul tidak lebih dari 30 karakter
+    return title.length > 30 ? `${title.substring(0, 27)}...` : title;
+  } catch (error) {
+    console.error("Error generating chat title:", error);
+    return "Obrolan Baru"; // Fallback jika gagal
   }
 };
 

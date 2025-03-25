@@ -152,7 +152,7 @@ export default function HomePage() {
             <Breadcrumb>
               <BreadcrumbList>
                 <BreadcrumbItem>
-                  <BreadcrumbPage className="line-clamp-1">Welcome</BreadcrumbPage>
+                  <BreadcrumbPage className="line-clamp-1">Selamat Datang!</BreadcrumbPage>
                 </BreadcrumbItem>
               </BreadcrumbList>
             </Breadcrumb>

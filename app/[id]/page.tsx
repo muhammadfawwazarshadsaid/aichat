@@ -213,7 +213,7 @@ export default function ChatPage() {
               <BreadcrumbList>
                 <BreadcrumbItem>
                   <BreadcrumbPage className="line-clamp-1">
-                    {chat?.alias || "Chat Name"}
+                    {chat?.alias || "Obrolan Baru"}
                   </BreadcrumbPage>
                 </BreadcrumbItem>
               </BreadcrumbList>
