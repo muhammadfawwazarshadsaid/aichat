@@ -8,7 +8,7 @@ import { omit } from "remeda"
 import { cn } from "@/lib/utils"
 import { useAudioRecording } from "@/hooks/use-audio-recording"
 import { useAutosizeTextArea } from "@/hooks/use-autosize-textarea"
-import { AudioVisualizer } from "@/components/ui/audio-visualizer"
+// import { AudioVisualizer } from "@/components/ui/audio-visualizer"
 import { Button } from "@/components/ui/button"
 import { FilePreview } from "@/components/ui/file-preview"
 import { InterruptPrompt } from "@/components/ui/interrupt-prompt"
@@ -435,20 +435,20 @@ function RecordingControls({
   textAreaHeight,
   onStopRecording,
 }: RecordingControlsProps) {
-  if (isRecording) {
-    return (
-      <div
-        className="absolute inset-[1px] z-50 overflow-hidden rounded-xl"
-        style={{ height: textAreaHeight - 2 }}
-      >
-        <AudioVisualizer
-          stream={audioStream}
-          isRecording={isRecording}
-          onClick={onStopRecording}
-        />
-      </div>
-    )
-  }
+  // if (isRecording) {
+  //   return (
+  //     <div
+  //       className="absolute inset-[1px] z-50 overflow-hidden rounded-xl"
+  //       style={{ height: textAreaHeight - 2 }}
+  //     >
+  //       <AudioVisualizer
+  //         stream={audioStream}
+  //         isRecording={isRecording}
+  //         onClick={onStopRecording}
+  //       />
+  //     </div>
+  //   )
+  // }
 
   if (isTranscribing) {
     return (
