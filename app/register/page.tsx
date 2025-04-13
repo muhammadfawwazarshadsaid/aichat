@@ -15,7 +15,7 @@ import error from "next/error";
 const schema = z.object({
   email: z.string().email("Email tidak valid"),
   password: z.string().min(6, "Password minimal 8 karakter")
-    .regex(/^(?=.*[A-Z])(?=.*\d).{8,}$/, "Password harus minimal 8 karakter, mengandung 1 huruf kapital, dan 1 angka"),
+    .regex(/^(?=.*[A-Z])(?=.*\d).{8,}, "Password harus minimal 8 karakter, mengandung 1 huruf kapital, dan 1 angka"),
   username: z.string().min(3, "Username minimal 3 karakter"),
   fullName: z.string().min(3, "Nama lengkap minimal 3 karakter"),
 });
